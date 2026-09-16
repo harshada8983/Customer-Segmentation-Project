@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Customer Segmentation Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root{
+    --ink:#14182C; --ink-soft:#232842; --bg:#F3F4F7; --card:#FFFFFF;
+    --border:#E4E6EC; --text:#1B2233; --text-muted:#6B7280;
+    --violet:#6250D6; --violet-light:#EAE7FB;
+    --teal:#0F7A72; --teal-light:#DDF1EE;
+    --amber:#D98E04; --amber-light:#FCEFD8;
+    --coral:#D8583B; --coral-light:#FBE7E1;
+    --good:#1E8E5A; --bad:#C6402F;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{ font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); line-height:1.5; }
+  h1,h2,h3,.num{ font-family:'Sora',sans-serif; }
+
+  header{
+    background:var(--ink); color:#fff; padding:22px 32px;
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;
+  }
+  header .brand{ display:flex; align-items:center; gap:14px; }
+  header .brand .mark{
+    width:38px; height:38px; border-radius:8px; background:var(--violet);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700; color:#fff; font-family:'Sora',sans-serif; font-size:18px;
+  }
+  header h1{ font-size:19px; font-weight:600; }
+  header p{ font-size:12.5px; color:#B7BECF; margin-top:2px; }
+  header .actions{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  header .actions label.upload-btn{
+    background:var(--violet); color:#fff; border:none; padding:9px 16px;
+    border-radius:7px; font-size:13px; font-weight:600; cursor:pointer;
+  }
+  header .actions button{
+    background:transparent; color:#fff; border:1px solid #414B62;
+    padding:9px 16px; border-radius:7px; font-size:13px; cursor:pointer;
+  }
+  header .actions button:hover{ background:var(--ink-soft); }
+  #fileInput{ display:none; }
+  #fileName{ font-size:11.5px; color:#B7BECF; }
+
+  main{ max-width:1280px; margin:0 auto; padding:26px 32px 60px; }
+
+  .controls{
+    background:var(--card); border:1px solid var(--border); border-radius:10px;
+    padding:16px 20px; display:flex; gap:22px; flex-wrap:wrap; align-items:flex-end; margin-bottom:22px;
+  }
+  .controls .field{ display:flex; flex-direction:column; gap:5px; min-width:150px; }
+  .controls label{ font-size:11.5px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.02em; }
+  .controls select{
+    border:1px solid var(--border); border-radius:6px; padding:8px 10px;
+    font-size:13.5px; font-family:'Inter',sans-serif; color:var(--text); background:#fff;
+  }
+  .controls .run{
+    background:var(--ink); color:#fff; border:none; border-radius:6px;
+    padding:9px 18px; font-size:13px; font-weight:600; cursor:pointer;
+  }
+  .controls .run:hover{ background:var(--ink-soft); }
+  .controls .note{ font-size:12px; color:var(--text-muted); margin-left:auto; max-width:280px; }
+
+  .kpis{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+  .kpi{ background:var(--card); border:1px solid var(--border); border-radius:10px; padding:18px 20px; }
+  .kpi .label{ font-size:12.5px; color:var(--text-muted); font-weight:600; margin-bottom:10px; }
+  .kpi .num{ font-size:26px; font-weight:600; }
+  .kpi .sub{ font-size:12px; color:var(--text-muted); margin-top:6px; }
+
+  .grid2{ display:grid; grid-template-columns:1.25fr 1fr; gap:16px; margin-bottom:16px; }
+  .grid2b{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+  .card{ background:var(--card); border:1px solid var(--border); border-radius:10px; padding:18px 20px 14px; }
+  .card h3{ font-size:14.5px; font-weight:600; margin-bottom:2px; }
+  .card .sub{ font-size:12px; color:var(--text-muted); margin-bottom:12px; }
+  .chart-wrap{ position:relative; width:100%; }
+
+  .legend{ display:flex; flex-wrap:wrap; gap:14px; font-size:12px; color:var(--text-muted); margin-bottom:10px; }
+  .legend span.dot{ width:9px; height:9px; border-radius:2px; display:inline-block; margin-right:5px; }
+
+  .seg-cards{ display:grid; grid-template-columns:repeat(auto-fit, minmax(230px,1fr)); gap:16px; margin-bottom:16px; }
+  .seg-card{ background:var(--card); border:1px solid var(--border); border-radius:10px; padding:18px 20px; border-top:3px solid var(--violet); }
+  .seg-card .name{ font-family:'Sora',sans-serif; font-size:15px; font-weight:600; margin-bottom:4px; }
+  .seg-card .size{ font-size:12px; color:var(--text-muted); margin-bottom:12px; }
+  .seg-card dl{ display:grid; grid-template-columns:auto 1fr; gap:5px 12px; font-size:12.5px; margin-bottom:12px; }
+  .seg-card dt{ color:var(--text-muted); }
+  .seg-card dd{ font-weight:600; text-align:right; }
+  .seg-card .action{ font-size:12.5px; color:var(--text); background:var(--bg); border-radius:6px; padding:9px 11px; line-height:1.45; }
+
+  table.data-table{ width:100%; border-collapse:collapse; font-size:13px; }
+  table.data-table th{
+    text-align:left; padding:9px 8px; color:var(--text-muted); font-weight:600;
+    border-bottom:1px solid var(--border); font-size:11.5px; text-transform:uppercase; letter-spacing:.02em;
+  }
+  table.data-table td{ padding:9px 8px; border-bottom:1px solid var(--border); }
+  table.data-table tr:last-child td{ border-bottom:none; }
+  .pill{ padding:3px 9px; border-radius:99px; font-size:11.5px; font-weight:600; }
+
+  footer{ text-align:center; padding:24px; font-size:12px; color:var(--text-muted); }
+
+  @media (max-width:980px){
+    .kpis{ grid-template-columns:repeat(2,1fr); }
+    .grid2, .grid2b{ grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="mark">C</div>
+    <div>
+      <h1>Customer Segmentation Dashboard</h1>
+      <p>K-Means clustering on RFM &amp; demographic features &middot; virtual internship project</p>
+    </div>
+  </div>
+  <div class="actions">
+    <span id="fileName"></span>
+    <label class="upload-btn" for="fileInput">Import CSV</label>
+    <input type="file" id="fileInput" accept=".csv">
+    <button id="resetDataBtn">Use sample data</button>
+  </div>
+</header>
+
+<main>
+
+  <div class="controls">
+    <div class="field">
+      <label>Number of clusters (K)</label>
+      <select id="kSelect">
+        <option value="3">3 segments</option>
+        <option value="4" selected>4 segments</option>
+        <option value="5">5 segments</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>X axis</label>
+      <select id="xAxis">
+        <option value="recency">Recency (days)</option>
+        <option value="frequency" selected>Frequency (orders)</option>
+        <option value="monetary">Monetary (total spend)</option>
+        <option value="age">Age</option>
+        <option value="income">Annual income</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Y axis</label>
+      <select id="yAxis">
+        <option value="recency">Recency (days)</option>
+        <option value="frequency">Frequency (orders)</option>
+        <option value="monetary" selected>Monetary (total spend)</option>
+        <option value="age">Age</option>
+        <option value="income">Annual income</option>
+      </select>
+    </div>
+    <button class="run" id="runBtn">Re-run clustering</button>
+    <div class="note">Clustering runs on standardized RFM + demographic features using K-Means.</div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi">
+      <div class="label">Total customers</div>
+      <div class="num" id="kpiCustomers">-</div>
+      <div class="sub" id="kpiCustomersSub">-</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Segments identified</div>
+      <div class="num" id="kpiSegments">-</div>
+      <div class="sub">via K-Means clustering</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Avg. customer value</div>
+      <div class="num" id="kpiValue">-</div>
+      <div class="sub">lifetime spend per customer</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Largest segment</div>
+      <div class="num" id="kpiLargest">-</div>
+      <div class="sub" id="kpiLargestSub">-</div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>Customer segments</h3>
+      <div class="sub" id="scatterSub">Cluster distribution across selected features</div>
+      <div class="legend" id="scatterLegend"></div>
+      <div class="chart-wrap" style="height:320px;">
+        <canvas id="scatterChart" role="img" aria-label="Scatter plot of customer segments">Customer segment scatter plot</canvas>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Segment size</h3>
+      <div class="sub">Share of customer base</div>
+      <div class="legend" id="pieLegend"></div>
+      <div class="chart-wrap" style="height:260px;">
+        <canvas id="pieChart" role="img" aria-label="Donut chart of segment sizes">Segment size donut chart</canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid2b">
+    <div class="card">
+      <h3>Segment profile comparison</h3>
+      <div class="sub">Normalized average across key features (0-100)</div>
+      <div class="chart-wrap" style="height:300px;">
+        <canvas id="radarChart" role="img" aria-label="Radar chart comparing segment profiles">Segment profile radar chart</canvas>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Revenue contribution by segment</h3>
+      <div class="sub">Total spend attributed to each segment</div>
+      <div class="chart-wrap" style="height:300px;">
+        <canvas id="revenueChart" role="img" aria-label="Bar chart of revenue by segment">Revenue by segment bar chart</canvas>
+      </div>
+    </div>
+  </div>
+
+  <h3 style="font-size:16px; margin:24px 0 12px;">Segment characteristics &amp; recommended actions</h3>
+  <div class="seg-cards" id="segCards"></div>
+
+  <div class="card">
+    <h3>Customer detail</h3>
+    <div class="sub">Sample of customers with assigned segment</div>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead>
+          <tr><th>ID</th><th>Age</th><th>Income</th><th>Recency</th><th>Orders</th><th>Total spend</th><th>Segment</th></tr>
+        </thead>
+        <tbody id="detailBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<footer>Customer Segmentation Dashboard &middot; K-Means clustering, RFM analysis &middot; HTML, CSS, JavaScript, Chart.js</footer>
+
+<script>
+/* ============================================================
+   SAMPLE CUSTOMER DATASET
+   Columns: customer_id, age, income, recency, frequency, monetary
+============================================================ */
+function seededRandom(seed){ let s=seed; return ()=>{ s=(s*9301+49297)%233280; return s/233280; }; }
+const rand = seededRandom(2026);
+
+function gauss(mean, sd){
+  let u=0,v=0;
+  while(u===0) u=rand();
+  while(v===0) v=rand();
+  return mean + sd * Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+}
+
+function buildSampleData(){
+  const rows = [];
+  let id = 1001;
+  // Four latent groups so clusters are meaningful
+  const groups = [
+    { n:70, age:[42,9],  income:[1450000,250000], recency:[12,6],  freq:[22,5], mon:[185000,35000] }, // high value loyal
+    { n:95, age:[31,7],  income:[720000,160000],  recency:[38,14], freq:[11,3], mon:[62000,15000]  }, // regular
+    { n:85, age:[27,6],  income:[420000,110000],  recency:[95,30], freq:[4,2],  mon:[18000,7000]   }, // occasional
+    { n:60, age:[52,10], income:[980000,220000],  recency:[210,55],freq:[3,2],  mon:[27000,11000]  }  // lapsed
+  ];
+  groups.forEach(g => {
+    for(let i=0;i<g.n;i++){
+      rows.push({
+        customer_id: 'C'+(id++),
+        age: Math.max(18, Math.round(gauss(g.age[0], g.age[1]))),
+        income: Math.max(120000, Math.round(gauss(g.income[0], g.income[1])/1000)*1000),
+        recency: Math.max(1, Math.round(gauss(g.recency[0], g.recency[1]))),
+        frequency: Math.max(1, Math.round(gauss(g.freq[0], g.freq[1]))),
+        monetary: Math.max(1500, Math.round(gauss(g.mon[0], g.mon[1])/100)*100)
+      });
+    }
+  });
+  return rows;
+}
+
+let rawData = buildSampleData();
+let charts = {};
+let clusterResult = null;
+
+const FEATURES = ['recency','frequency','monetary','age','income'];
+const FEATURE_LABELS = { recency:'Recency', frequency:'Frequency', monetary:'Monetary', age:'Age', income:'Income' };
+const PALETTE = ['#2a78d6','#eb6834','#1baf7a','#eda100','#6250d6'];
+
+/* ---------- CSV import ---------- */
+function parseCSV(text){
+  const lines = text.trim().split(/\r?\n/);
+  const headers = lines[0].split(',').map(h=>h.trim().toLowerCase());
+  const idx = {};
+  ['customer_id','age','income','recency','frequency','monetary'].forEach(n => idx[n]=headers.indexOf(n));
+  if(idx.recency===-1 || idx.frequency===-1 || idx.monetary===-1){
+    alert('CSV must include at least: recency, frequency, monetary columns.\nOptional: customer_id, age, income');
+    return null;
+  }
+  const rows=[];
+  for(let i=1;i<lines.length;i++){
+    if(!lines[i].trim()) continue;
+    const c = lines[i].split(',');
+    rows.push({
+      customer_id: idx.customer_id>-1 ? (c[idx.customer_id]||'').trim() : 'C'+i,
+      age: idx.age>-1 ? Number(c[idx.age])||0 : 0,
+      income: idx.income>-1 ? Number(c[idx.income])||0 : 0,
+      recency: Number(c[idx.recency])||0,
+      frequency: Number(c[idx.frequency])||0,
+      monetary: Number(c[idx.monetary])||0
+    });
+  }
+  return rows.length ? rows : null;
+}
+
+document.getElementById('fileInput').addEventListener('change', function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = evt => {
+    const parsed = parseCSV(evt.target.result);
+    if(parsed){
+      rawData = parsed;
+      document.getElementById('fileName').textContent = file.name;
+      runAndRender();
+    }
+  };
+  reader.readAsText(file);
+});
+
+document.getElementById('resetDataBtn').addEventListener('click', function(){
+  rawData = buildSampleData();
+  document.getElementById('fileName').textContent = '';
+  document.getElementById('fileInput').value = '';
+  runAndRender();
+});
+
+/* ---------- Standardize (z-score) ---------- */
+function standardize(data, features){
+  const stats = {};
+  features.forEach(f => {
+    const vals = data.map(d=>d[f]);
+    const mean = vals.reduce((s,v)=>s+v,0)/vals.length;
+    const sd = Math.sqrt(vals.reduce((s,v)=>s+(v-mean)**2,0)/vals.length) || 1;
+    stats[f] = {mean, sd};
+  });
+  const matrix = data.map(d => features.map(f => (d[f]-stats[f].mean)/stats[f].sd));
+  return {matrix, stats};
+}
+
+/* ---------- K-Means (k-means++ init) ---------- */
+function dist2(a,b){ let s=0; for(let i=0;i<a.length;i++) s+=(a[i]-b[i])**2; return s; }
+
+function kmeans(matrix, k, iterations=60){
+  const n = matrix.length, dim = matrix[0].length;
+  const kr = seededRandom(7);
+  // k-means++ init
+  const centroids = [matrix[Math.floor(kr()*n)].slice()];
+  while(centroids.length < k){
+    const dists = matrix.map(p => Math.min(...centroids.map(c=>dist2(p,c))));
+    const total = dists.reduce((s,v)=>s+v,0) || 1;
+    let r = kr()*total, acc=0, pick=0;
+    for(let i=0;i<n;i++){ acc+=dists[i]; if(acc>=r){ pick=i; break; } }
+    centroids.push(matrix[pick].slice());
+  }
+  let labels = new Array(n).fill(0);
+  for(let it=0; it<iterations; it++){
+    let changed = false;
+    for(let i=0;i<n;i++){
+      let best=0, bestD=Infinity;
+      for(let c=0;c<k;c++){
+        const d = dist2(matrix[i], centroids[c]);
+        if(d<bestD){ bestD=d; best=c; }
+      }
+      if(labels[i]!==best){ labels[i]=best; changed=true; }
+    }
+    for(let c=0;c<k;c++){
+      const members = matrix.filter((_,i)=>labels[i]===c);
+      if(!members.length) continue;
+      for(let d=0;d<dim;d++){
+        centroids[c][d] = members.reduce((s,m)=>s+m[d],0)/members.length;
+      }
+    }
+    if(!changed && it>2) break;
+  }
+  return {labels, centroids};
+}
+
+/* ---------- Segment naming based on RFM profile ---------- */
+function nameSegment(profile, overall){
+  const highMon = profile.monetary > overall.monetary * 1.3;
+  const lowMon  = profile.monetary < overall.monetary * 0.7;
+  const highFreq = profile.frequency > overall.frequency * 1.3;
+  const highRec = profile.recency > overall.recency * 1.4; // higher recency = longer since purchase = worse
+
+  if(highMon && highFreq) return {
+    name:'Champions',
+    action:'Your most valuable customers. Reward with loyalty perks, early access, and referral incentives to keep them engaged.'
+  };
+  if(highRec && !highMon) return {
+    name:'At-Risk / Lapsed',
+    action:'Haven\u2019t purchased in a long time. Run win-back campaigns with targeted discounts and re-engagement emails.'
+  };
+  if(highRec && highMon) return {
+    name:'Can\u2019t Lose Them',
+    action:'High spenders who have gone quiet. Prioritise personal outreach and exclusive offers before they churn.'
+  };
+  if(lowMon && !highRec) return {
+    name:'New / Low Spenders',
+    action:'Recent but low-value buyers. Nurture with onboarding content, bundles, and first-repeat-purchase offers.'
+  };
+  return {
+    name:'Loyal Regulars',
+    action:'Consistent, dependable buyers. Upsell complementary products and encourage larger basket sizes.'
+  };
+}
+
+function fmtINR(n){
+  if(n>=10000000) return '\u20B9'+(n/10000000).toFixed(2)+'Cr';
+  if(n>=100000) return '\u20B9'+(n/100000).toFixed(2)+'L';
+  if(n>=1000) return '\u20B9'+(n/1000).toFixed(1)+'K';
+  return '\u20B9'+Math.round(n);
+}
+
+function destroyChart(key){ if(charts[key]){ charts[key].destroy(); delete charts[key]; } }
+
+/* ---------- Main pipeline ---------- */
+function runAndRender(){
+  const k = Number(document.getElementById('kSelect').value);
+  const usable = FEATURES.filter(f => rawData.some(d => d[f] > 0));
+  const {matrix} = standardize(rawData, usable);
+  const {labels} = kmeans(matrix, k);
+
+  const overall = {};
+  FEATURES.forEach(f => overall[f] = rawData.reduce((s,d)=>s+d[f],0)/rawData.length);
+
+  const segments = [];
+  for(let c=0;c<k;c++){
+    const members = rawData.filter((_,i)=>labels[i]===c);
+    if(!members.length) continue;
+    const profile = {};
+    FEATURES.forEach(f => profile[f] = members.reduce((s,d)=>s+d[f],0)/members.length);
+    const meta = nameSegment(profile, overall);
+    segments.push({
+      id:c, members, profile,
+      name: meta.name, action: meta.action,
+      totalRevenue: members.reduce((s,d)=>s+d.monetary,0),
+      color: PALETTE[c % PALETTE.length]
+    });
+  }
+  // dedupe names
+  const seen = {};
+  segments.forEach(s => {
+    if(seen[s.name]){ seen[s.name]++; s.name = s.name+' '+seen[s.name]; }
+    else seen[s.name] = 1;
+  });
+  segments.sort((a,b)=>b.totalRevenue-a.totalRevenue);
+
+  clusterResult = {labels, segments, overall};
+  renderAll();
+}
+
+function renderAll(){
+  const {segments, overall} = clusterResult;
+  const total = rawData.length;
+  const totalRevenue = rawData.reduce((s,d)=>s+d.monetary,0);
+  const largest = [...segments].sort((a,b)=>b.members.length-a.members.length)[0];
+
+  document.getElementById('kpiCustomers').textContent = total.toLocaleString('en-IN');
+  document.getElementById('kpiCustomersSub').textContent = fmtINR(totalRevenue)+' total lifetime value';
+  document.getElementById('kpiSegments').textContent = segments.length;
+  document.getElementById('kpiValue').textContent = fmtINR(totalRevenue/total);
+  document.getElementById('kpiLargest').textContent = largest.name;
+  document.getElementById('kpiLargestSub').textContent = largest.members.length+' customers ('+Math.round(largest.members.length/total*100)+'%)';
+
+  /* ---- Scatter ---- */
+  const xf = document.getElementById('xAxis').value;
+  const yf = document.getElementById('yAxis').value;
+  document.getElementById('scatterSub').textContent = FEATURE_LABELS[xf]+' vs '+FEATURE_LABELS[yf];
+  destroyChart('scatter');
+  charts.scatter = new Chart(document.getElementById('scatterChart'), {
+    type:'scatter',
+    data:{
+      datasets: segments.map(s => ({
+        label: s.name,
+        data: s.members.map(m => ({x:m[xf], y:m[yf]})),
+        backgroundColor: s.color+'CC',
+        pointRadius: 4,
+        pointHoverRadius: 6
+      }))
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{
+        x:{ title:{display:true, text:FEATURE_LABELS[xf], color:'#6B7280', font:{size:11}}, grid:{color:'#EEF0F3'} },
+        y:{ title:{display:true, text:FEATURE_LABELS[yf], color:'#6B7280', font:{size:11}}, grid:{color:'#EEF0F3'} }
+      }
+    }
+  });
+  document.getElementById('scatterLegend').innerHTML = segments.map(s =>
+    `<span><span class="dot" style="background:${s.color}"></span>${s.name}</span>`
+  ).join('');
+
+  /* ---- Pie ---- */
+  destroyChart('pie');
+  charts.pie = new Chart(document.getElementById('pieChart'), {
+    type:'doughnut',
+    data:{
+      labels: segments.map(s=>s.name),
+      datasets:[{ data: segments.map(s=>s.members.length), backgroundColor: segments.map(s=>s.color), borderWidth:2, borderColor:'#fff' }]
+    },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, cutout:'62%' }
+  });
+  document.getElementById('pieLegend').innerHTML = segments.map(s =>
+    `<span><span class="dot" style="background:${s.color}"></span>${s.name} ${Math.round(s.members.length/rawData.length*100)}%</span>`
+  ).join('');
+
+  /* ---- Radar ---- */
+  const radarFeatures = ['frequency','monetary','age','income'];
+  const maxes = {};
+  radarFeatures.forEach(f => maxes[f] = Math.max(...segments.map(s=>s.profile[f])) || 1);
+  // recency inverted: lower is better -> show as "engagement"
+  const maxRec = Math.max(...segments.map(s=>s.profile.recency)) || 1;
+  destroyChart('radar');
+  charts.radar = new Chart(document.getElementById('radarChart'), {
+    type:'radar',
+    data:{
+      labels:['Engagement','Frequency','Monetary','Age','Income'],
+      datasets: segments.map(s => ({
+        label: s.name,
+        data: [
+          Math.round((1 - s.profile.recency/maxRec)*100),
+          Math.round(s.profile.frequency/maxes.frequency*100),
+          Math.round(s.profile.monetary/maxes.monetary*100),
+          Math.round(s.profile.age/maxes.age*100),
+          Math.round(s.profile.income/maxes.income*100)
+        ],
+        borderColor: s.color,
+        backgroundColor: s.color+'26',
+        borderWidth:2,
+        pointRadius:3,
+        pointBackgroundColor: s.color
+      }))
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, font:{size:11}, color:'#6B7280' } } },
+      scales:{ r:{ beginAtZero:true, max:100, ticks:{ display:false }, grid:{color:'#E4E6EC'}, pointLabels:{ font:{size:11}, color:'#6B7280' } } }
+    }
+  });
+
+  /* ---- Revenue bar ---- */
+  destroyChart('revenue');
+  charts.revenue = new Chart(document.getElementById('revenueChart'), {
+    type:'bar',
+    data:{
+      labels: segments.map(s=>s.name),
+      datasets:[{ data: segments.map(s=>s.totalRevenue), backgroundColor: segments.map(s=>s.color), borderRadius:4, maxBarThickness:48 }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{
+        y:{ ticks:{ callback:v=>fmtINR(v) }, grid:{color:'#EEF0F3'} },
+        x:{ grid:{display:false}, ticks:{ font:{size:11} } }
+      }
+    }
+  });
+
+  /* ---- Segment cards ---- */
+  document.getElementById('segCards').innerHTML = segments.map(s => `
+    <div class="seg-card" style="border-top-color:${s.color}">
+      <div class="name">${s.name}</div>
+      <div class="size">${s.members.length} customers &middot; ${Math.round(s.members.length/rawData.length*100)}% of base</div>
+      <dl>
+        <dt>Avg. recency</dt><dd>${Math.round(s.profile.recency)} days</dd>
+        <dt>Avg. orders</dt><dd>${s.profile.frequency.toFixed(1)}</dd>
+        <dt>Avg. spend</dt><dd>${fmtINR(s.profile.monetary)}</dd>
+        <dt>Avg. age</dt><dd>${Math.round(s.profile.age)} yrs</dd>
+        <dt>Avg. income</dt><dd>${fmtINR(s.profile.income)}</dd>
+        <dt>Revenue share</dt><dd>${Math.round(s.totalRevenue / rawData.reduce((a,d)=>a+d.monetary,0) * 100)}%</dd>
+      </dl>
+      <div class="action">${s.action}</div>
+    </div>
+  `).join('');
+
+  /* ---- Detail table ---- */
+  const segOf = {};
+  segments.forEach(s => s.members.forEach(m => segOf[m.customer_id] = s));
+  const sample = [...rawData].sort((a,b)=>b.monetary-a.monetary).slice(0,15);
+  document.getElementById('detailBody').innerHTML = sample.map(c => {
+    const s = segOf[c.customer_id];
+    return `<tr>
+      <td>${c.customer_id}</td>
+      <td>${c.age}</td>
+      <td>${fmtINR(c.income)}</td>
+      <td>${c.recency} d</td>
+      <td>${c.frequency}</td>
+      <td>${fmtINR(c.monetary)}</td>
+      <td><span class="pill" style="background:${s.color}1F; color:${s.color}">${s.name}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+document.getElementById('runBtn').addEventListener('click', runAndRender);
+document.getElementById('kSelect').addEventListener('change', runAndRender);
+document.getElementById('xAxis').addEventListener('change', renderAll);
+document.getElementById('yAxis').addEventListener('change', renderAll);
+
+runAndRender();
+</script>
+
+</body>
+</html>
