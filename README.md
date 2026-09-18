@@ -25,7 +25,7 @@ The project has two parts:
 | **Analysis** | `customer_segmentation.py` | Full clustering pipeline in Python with scikit-learn — scaling, optimal-K selection, K-Means, PCA, and matplotlib visualisations |
 | **Dashboard** | `customer_segmentation_dashboard.html` | Interactive browser dashboard — clustering runs live, with adjustable K, switchable axes, and CSV import |
 
-**Live dashboard:** extraordinary-speculoos-ba8ab4.netlify.app
+**Live dashboard:** https://extraordinary-speculoos-ba8ab4.netlify.app/
 
 
 ---
